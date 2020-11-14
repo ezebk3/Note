@@ -1,4 +1,4 @@
-## 1. SpringMVC概述
+## 1.SpringMVC概述
 
 MVC：
 
@@ -2791,3 +2791,475 @@ Spring表单需要在model中添加command：
 ```
 
 ## 10. 数据转换 & 数据格式化 & 数据校验
+
+### 数据转换
+
+> ```markdown
+> SpringMVC封装自定义类型对象的时候？
+> javaBean要和页面提交的数据进行一一绑定？
+> 1）、页面提交的所有数据都是字符串？
+> 2）、Integer age,Date birth;
+>        employName=zhangsan&age=18&gender=1
+>        String age = request.getParameter("age");
+> 牵扯到以下操作；
+> 1）、数据绑定期间的数据类型转换？String--Integer String--Boolean,xxx
+> 2）、数据绑定期间的数据格式化问题？比如提交的日期进行转换
+>             birth=2017-12-15----->Date    2017/12/15  2017.12.15  2017-12-15
+> 3）、数据校验？
+>             我们提交的数据必须是合法的？
+>             前端校验：js+正则表达式；
+>             后端校验：重要数据也是必须的；
+>             1）、校验成功！数据合法
+>             2）、校验失败？
+> ```
+
+bindRequestParameters方法将请求参数于JavaBean进行绑定，为自定义对象赋值。
+
+```java
+ModelAttributeMethodProcessor
+public final Object resolveArgument(
+            MethodParameter parameter, ModelAndViewContainer mavContainer,
+            NativeWebRequest request, WebDataBinderFactory binderFactory)
+            throws Exception {
+        String name = ModelFactory.getNameForParameter(parameter);
+        Object attribute = (mavContainer.containsAttribute(name)) ?
+                mavContainer.getModel().get(name) : createAttribute(name, parameter, binderFactory, request);
+    
+    	//WebDataBinder
+        WebDataBinder binder = binderFactory.createBinder(request, attribute, name);
+    
+    
+        if (binder.getTarget() != null) {
+            
+               //将页面提交过来的数据封装到javaBean的属性中
+            bindRequestParameters(binder, request);
+               //+++++++++
+            
+            validateIfApplicable(binder, parameter);
+            if (binder.getBindingResult().hasErrors()) {
+                if (isBindExceptionRequired(binder, parameter)) {
+                    throw new BindException(binder.getBindingResult());
+                }
+            }
+        }
+
+```
+
+#### WebDataBinder：
+
+**数据绑定器有什么用？**
+
+1. 数据绑定器负责数据绑定工作
+2. 数据绑定期间产生的类型转换、格式化、数据校验等问题
+
+ ![img](SpringMVC.assets/Image-1605255202814.png) 
+
+- conversionService组件：
+
+  - 负责数据类型的转换以及格式化功能；     
+  - ConversionService中有非常多的**converter；**   
+  - 不同类型的转换和格式化用它自己的**converter**
+
+  ```java
+      ...
+  @org.springframework.format.annotation.DateTimeFormat java.util.Date -> java.lang.String: org.springframework.format.datetime.DateTimeFormatAnnotationFormatterFactory@32abc654
+      @org.springframework.format.annotation.NumberFormat java.lang.Double -> java.lang.String: org.springframework.format.number.NumberFormatAnnotationFormatterFactory@140bb45d
+      @org.springframework.format.annotation.NumberFormat java.lang.Float -> java.lang.String: org.springframework.format.number.NumberFormatAnnotationFormatterFactory@140bb45d
+      ....
+  org.springframework.format.number.NumberFormatAnnotationFormatterFactory@140bb45d
+      java.lang.String -> @org.springframework.format.annotation.NumberFormat java.math.BigInteger: org.springframework.format.number.NumberFormatAnnotationFormatterFactory@140bb45d
+      java.lang.String -> java.lang.Boolean : org.springframework.core.convert.support.StringToBooleanConverter@22f562e2
+      java.lang.String -> java.lang.Character : org.springframework.core.convert.support.StringToCharacterConverter@5f2594f5
+      java.lang.String -> java.lang.Enum : org.springframework.core.convert.support.StringToEnumConverterFactory@1347a7be
+      【java.lang.String -> java.lang.Number : 
+  ...
+      java...
+  ```
+
+  
+
+- validators负责数据校验工作
+
+ ![img](SpringMVC.assets/Image [1]-1605255368587.png) 
+
+-  bindingResult负责保存以及解析数据绑定期间数据校验产生的错误
+
+![img](SpringMVC.assets/Image [2]-1605255330651.png) 
+
+
+![1605255897274](SpringMVC.assets/1605255897274.png)
+
+#### 自定义类型转换器：
+
+步骤：
+
+1. ConversionService:：是一个接口
+
+   ![img](SpringMVC.assets/Image [4]-1605257482477.png) 
+
+2. Converter是ConversionService中的组件；
+
+   1. Converter得放进ConversionService 中；
+   2. 将WebDataBinder中的ConversionService设置成我们这个加了自定义类型转换器的ConversionService；
+
+3. 配置ConversionService
+
+需要实现的步骤
+
+1. 实现Converter接口，写一个自定义的类型转换器
+
+   ```java
+   public class MyStringToEmployeeConverter implements Converter<String, Employee> {
+   
+       @Autowired
+       DepartmentDao departmentDao;
+   
+       public Employee convert(String source) {
+           System.out.println("将要转换的字符串" + source);
+           Employee employee = new Employee();
+           if (source.contains("-")) {
+               String[] split = source.split("-");
+               employee.setLastName(split[0]);
+               employee.setEmail(split[1]);
+               employee.setGender(Integer.parseInt(split[2]));
+               employee.setDepartment(departmentDao.getDepartment(Integer.parseInt(split[3])));
+           }
+           return employee;
+       }
+   }
+   ```
+
+2. 配置出ConversionService
+
+   在ioc.xml中
+
+   ```xml
+   
+       <bean id="myconversionService"			class="org.springframework.context.support.ConversionServiceFactoryBean">
+           <!--
+   				ConversionServiceFactoryBean:
+   				创建的ConversionService组件是没有格式化器(formatter)存在的；
+   				推荐使用：
+   		"org.springframework.format.support.FormattingConversionServiceFactoryBean"
+   		-->
+           <property name="converters">
+               <set>
+                   <bean class="com.chenhui.component.MyStringToEmployeeConverter"/>	
+               </set>
+           </property>
+       </bean>
+   ```
+
+3. 让SpringMVC用我们的ConversionService
+
+   ```xml
+   <mvc:annotation-driven conversion-service="myconversionService"></mvc:annotation-driven>
+   ```
+
+   
+
+#### 动态资源和静态资源访问
+
+1. `<mvc:default-servlet-handler/> ` 与 `<mvc:annotation-driven/>`
+
+   1. 都没配
+
+      - 动态能访问：
+
+        DefaultAnnotationHandlerMapping中的handlerMap中保存了每一个资源的映射信息
+
+      - 静态不能访问：
+
+        handlerMap中没有保存静态资源映射的请求
+
+         ![img](SpringMVC.assets/Image [7].png) 
+
+         <img src="SpringMVC.assets/Image [8].png" alt="img" style="zoom: 67%;" /> 
+
+      - handleAdapter
+
+         ![img](SpringMVC.assets/Image [9].png) 
+
+   2. `<mvc:default-servlet-handler/>`不加`<mvc:annotation-driven/>`
+
+      - 动态不能访问：DefaultAnnotationHandlerMapping被SimpleUrlHandlerMapping替换。
+
+      - 静态能访问的原因：SimpleUrlHandlerMapping把所有请求都映射给tomcat；
+
+         ![img](SpringMVC.assets/Image [10].png) 
+
+      - handleAdapter
+
+         ![img](SpringMVC.assets/Image [11].png) 
+
+   3. 都加上
+
+      - 都能访问
+
+        handlerMap
+
+         ![img](SpringMVC.assets/Image [12].png) 
+
+      - RequestMappingHandlerMapping:动态资源可以访问
+
+         ![img](SpringMVC.assets/Image [13].png) 
+
+        > **handleMethods属性保存了每一个请求用哪个方法来处理；**
+        >
+        > **SimpleUrlHandlerMapping：将请求直接交给tomcat；有他，静态资源就没问题**
+
+      - handleAdapter
+
+         ![img](SpringMVC.assets/Image [14].png) 
+
+        原来的AnnotationMethodHandlerAdapter被换成RequestMappingHandlerAdapter
+
+   4. 只加`<mvc:annotation-driven/>`
+
+      - 动态能访问，静态无法访问
+
+### 数据格式化
+
+**自定义数据格式化**
+
+1. 在属性上加Format标签
+
+2. 更改转换器
+
+   例：
+
+```java
+@DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date birth;
+```
+
+```xml
+<bean id="myconversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+        <property name="converters">
+            <set>
+                <bean class="com.chenhui.component.MyStringToEmployeeConverter"/>
+            </set>
+        </property>
+    </bean>
+```
+
+### 数据校验
+
+#### 步骤
+
+- 导入Jar包
+
+```xml
+		<dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>1.1.0.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>5.4.1.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>3.3.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml</groupId>
+            <artifactId>classmate</artifactId>
+            <version>1.3.3</version>
+        </dependency>
+```
+
+- 在变量上放上注解，错误信息message
+
+```java
+	@NotNull
+    @Length(min = 5, max = 10,message='xxxx')
+    private String lastName;
+
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @Past
+    private Date birth;
+
+```
+
+- 对SpringMVC封装对象加上@Valid注解
+- 校验结果在BindingResult的result中
+
+```java
+    @RequestMapping(value = "/emp", method = RequestMethod.POST)
+    public String addEmp(@Valid Employee employee, BindingResult result, Model model) {
+
+        if (result.hasErrors()){
+            System.out.println("有校验错误");
+            return "addEmp";
+        }else{
+            employees.save(employee);
+        }
+
+
+        return "redirect:/emp";
+    }
+```
+
+- 来到页面使用form:errors取出错误信息
+- 可以把错误信息存到Model中，然后在页面中取Model的对应的key
+
+```jsp
+<form:form action="${ctp}/emp" method="post">
+    姓名：<form:input path="lastName"></form:input><form:errors path="lastName"></form:errors><br>
+    邮箱：<form:input path="email"></form:input><form:errors path="email"></form:errors><br>
+    生日：<form:input path="birth"></form:input><form:errors path="birth"></form:errors><br>
+    性别：<br>
+    男：<form:radiobutton path="gender" value="1"></form:radiobutton>
+    女：<form:radiobutton path="gender" value="0"></form:radiobutton><br>
+    部门：<form:select path="department.id" items="${departments}"
+                    itemLabel="departmentName" itemValue="id">
+        </form:select>
+    <input type="submit" value="提交">
+</form:form>
+```
+
+#### 原生Form显示错误：
+
+1）、原生的表单怎么办？   将错误放在Model中就行了
+
+#### 国际化定制
+
+国际化定制自己的错误消息显示
+
+​	编写国际化的文件
+
+- errors_zh_CN.properties
+- errors_en_US.properties
+
+key有规定（精确优先）：
+
+```markdown
+ codes
+     [
+          Email.employee.email,      校验规则.隐含模型中这个对象的key.对象的属性
+          Email.email,                       校验规则.属性名
+          Email.java.lang.String,      校验规则.属性类型
+          Email
+    ];
+
+```
+
+1、先编写国际化配置文件
+
+ ![img](SpringMVC.assets/Image [18].png) 
+
+2、让SpringMVC管理国际化资源文件
+
+```xml
+<!-- 管理国际化资源文件 -->
+    <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+        <property name="basename" value="errors"></property>
+    </bean>
+```
+
+3、来到页面取值
+
+4、高级国际化？  
+
+​	 动态传入消息参数；
+
+ ![img](SpringMVC.assets/Image [19].png) 
+
+{0}：永远都是当前属性名；
+
+{1}、{2}
+
+
+
+## 11.SpringMVCAjax
+
+```markdown
+ajax；
+1、SpringMVC快速的完成ajax功能？
+     1）、返回数据是json就ok；
+     2）、页面,$.ajax()；
+2、原生javaWeb：
+     1）、导入GSON；
+     2）、返回的数据用GSON转成json
+     3）、写出去；
+3、SpringMVC-ajax：
+     1、导包
+        jackson-annotations-2.1.5.jar
+        jackson-core-2.1.5.jar
+        jackson-databind-2.1.5.jar
+     2、写配置
+     3、测试
+```
+
+maven导入包
+
+```xml
+		<dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+```
+
+```java
+@Controller
+public class AjaxController {
+    @Autowired
+    EmployeeDao employeeDao;
+
+
+    @ResponseBody
+    @RequestMapping("/getallajax")
+    public Collection<Employee> ajaxGetAll() {
+        Collection<Employee> all = employeeDao.getAll();
+        return all;
+    }
+}
+```
+
+![1605343541927](SpringMVC.assets/1605343541927.png)
+
+
+
+- @JsonIgnore可以忽略字段
+
+- @JsonFormat(pattern="")
+
+- ```java
+      @DateTimeFormat(pattern = "yyyy-MM-dd")
+      @Past
+      @JsonFormat(pattern = "yyyy-MM-dd")
+      private Date birth;
+  
+      private String email;
+      //1 male, 0 female
+  
+      private Integer gender;
+  
+      @JsonIgnore
+      private Department department;
+  ```
+
+  输入：
+
+  ![1605344171944](SpringMVC.assets/1605344171944.png)
+
+  结果：
+
+  ![1605344146604](SpringMVC.assets/1605344146604.png)
