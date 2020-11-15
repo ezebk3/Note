@@ -1,3 +1,5 @@
+# SpringMVC
+
 ## 1.SpringMVC概述
 
 MVC：
@@ -509,6 +511,8 @@ REST就是一个资源定位及资源操作的风格。不是标准也不是协�
 
 ```
 
+**注意**
+
 高版本Tomcat会出现问题：JSPs only permit GET POST or HEAD，在页面上加上异常处理即可
 
 ```jsp
@@ -894,7 +898,11 @@ public void  test05(@ModelAttribute("user") User user){
 
 或者在类上加 **@RestController**注解，可以让类中的所有方法都不走视图解析器，直接返回JSON字符串
 
-## 7. SpringMVC执行流程源码
+
+
+
+
+## 7. 视图源码执行流程
 
 ### 7.0 SpringMVC的九大组件
 
@@ -2016,8 +2024,6 @@ if (viewName.startsWith(FORWARD_URL_PREFIX)) {
 
 直接将请求映射到某个页面，不需要写方法了：
 
-
-
 **注意：会走视图解析的功能**
 
 在ioc.xml中加入
@@ -2151,7 +2157,7 @@ public void render(Map<String, ?> model, HttpServletRequest request, HttpServlet
 
 ## 9. ResetCRUD
 
-###  1. 环境搭建
+###  9.1 环境搭建
 
 #### 	配置文件
 
@@ -2501,7 +2507,7 @@ public class EmployeeDao {
 
 ```
 
-### 2. Controller编写
+### 9.2 Controller编写
 
 #### EmployeeController
 
@@ -2589,7 +2595,7 @@ public class EmployeeController {
 }
 ```
 
-### 3. Jsp编写
+### 9.3 Jsp编写
 
 #### list.jsp
 
@@ -2779,7 +2785,7 @@ Spring表单需要在model中添加command：
 
 ```
 
-### 4. 解决DispatcherServlet拦截静态文件
+### 9.4 解决DispatcherServlet拦截静态文件
 
 **让Tomcat托管js文件**
 
@@ -2792,7 +2798,7 @@ Spring表单需要在model中添加command：
 
 ## 10. 数据转换 & 数据格式化 & 数据校验
 
-### 数据转换
+### 10.1 数据转换
 
 > ```markdown
 > SpringMVC封装自定义类型对象的时候？
@@ -3018,7 +3024,7 @@ public final Object resolveArgument(
 
       - 动态能访问，静态无法访问
 
-### 数据格式化
+### 10.2 数据格式化
 
 **自定义数据格式化**
 
@@ -3043,7 +3049,7 @@ public final Object resolveArgument(
     </bean>
 ```
 
-### 数据校验
+### 10.3 数据校验
 
 #### 步骤
 
@@ -3173,11 +3179,15 @@ key有规定（精确优先）：
 
 {0}：永远都是当前属性名；
 
-{1}、{2}
+@Length(min = 5, max = 10,message='xxxx')
+
+按照字母排序
+
+{1}为max {2}为min
 
 
 
-## 11.SpringMVCAjax
+## 11. 其他数据响应与接受
 
 ```markdown
 ajax；
@@ -3196,6 +3206,10 @@ ajax；
      2、写配置
      3、测试
 ```
+
+### 11.1 Json数据响应与接受
+
+#### ResponseBody
 
 maven导入包
 
@@ -3263,3 +3277,1178 @@ public class AjaxController {
   结果：
 
   ![1605344146604](SpringMVC.assets/1605344146604.png)
+
+
+
+#### RequestBody
+
+- 可以接受json数据
+
+![](SpringMVC.assets/1605346124074.png)
+
+#### HttpEntity<String>
+
+- 代替RequestBody，
+- 不仅能拿请求体数据，还能拿请求头数据
+
+![1605347056358](SpringMVC.assets/1605347056358.png)
+
+#### ResponseEntity<String>
+
+- 可以设置响应头
+
+![1605348403547](SpringMVC.assets/1605348403547.png)
+
+### 11.2 文件上传与下载
+
+#### 文件上传
+
+##### 单文件上传:
+
+maven导入包
+
+```xml
+		<dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+```
+
+编写控制器
+
+```java
+package com.chenhui.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+
+@Controller
+public class FileUploadController {
+    @RequestMapping("/upload")
+    public String upload(@RequestParam(value = "username", required = false) String username,
+                         @RequestParam(value = "headerImg", required = false) MultipartFile file,
+                         Model model){
+
+
+        System.out.println("上传信息");
+        System.out.println("文件名"+file.getName());
+        System.out.println("文件初始名"+file.getOriginalFilename());
+
+        try {
+            file.transferTo(new File("D:\\upload\\"+file.getOriginalFilename()));
+            model.addAttribute("message","文件上传成功");
+        } catch (IOException e) {
+            e.printStackTrace();
+            model.addAttribute("message","文件上传失败"+e.getCause());
+        }
+
+        return "list";
+
+    }
+}
+```
+
+注册文件上传解析器
+
+```xml
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="#{1024*1024*20}"></property>
+        <property name="defaultEncoding" value="utf-8"></property>
+    </bean>
+```
+
+编写jsp页面
+
+```jsp
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%--
+  Created by IntelliJ IDEA.
+  User: admin
+  Date: 2020/11/13
+  Time: 9:18
+  To change this template use File | Settings | File Templates.
+--%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>员工列表</title>
+</head>
+<body>
+<% pageContext.setAttribute("ctp", request.getContextPath());
+//    System.out.println(request.getContextPath());
+%>
+<a href="toaddpage">添加员工</a><br>
+<hr>
+<h1>${message}</h1>
+<form action="${ctp}/upload" method="post" enctype="multipart/form-data">
+    头像：<input type="file" name="headerImg">
+    昵称：<input type="text" name="username">
+    <input type="submit" value="提交">
+</form>
+</body>
+</html>
+
+```
+
+结果
+
+![1605406824829](SpringMVC.assets/1605406824829.png)
+
+![1605406991249](SpringMVC.assets/1605406991249.png)
+
+##### 多文件上传:
+
+```java
+@Controller
+public class FileUploadController {
+    @RequestMapping("/upload")
+    public String upload(@RequestParam(value = "username", required = false) String username,
+                         @RequestParam(value = "headerImg", required = false) MultipartFile[] files,
+                         Model model){
+		
+        for(MultipartFile file: files){
+            
+            System.out.println("上传信息");
+            System.out.println("文件名"+file.getName());
+            System.out.println("文件初始名"+file.getOriginalFilename());
+			if(!file.isEmpty()){
+                try {
+                    file.transferTo(new File("D:\\upload\\"+file.getOriginalFilename()));
+                    model.addAttribute("message","文件上传成功");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    model.addAttribute("message","文件上传失败"+e.getCause());
+                }
+            }
+            return "list";                       
+        }       
+    }
+}
+```
+
+
+
+#### 文件下载
+
+```java
+@Controller
+public class DownloadController {
+    @RequestMapping(value = "/DownLoad/{fileName}/{fileType}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> download(HttpServletRequest request, @PathVariable String fileName, @PathVariable String fileType) throws IOException {
+        File file = new File("D:\\Apks\\" + fileName + "." + fileType);
+        byte[] body = null;
+        InputStream is = new FileInputStream(file);
+        body = new byte[is.available()];
+        is.read(body);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attchement;filename=" + file.getName());
+        HttpStatus statusCode = HttpStatus.OK;
+        ResponseEntity<byte[]> entity = new ResponseEntity<>(body, headers, statusCode);
+        return entity;
+    }
+}
+```
+
+### 11.3 HttpMessageConverter<T>接口:
+
+>  **Spring3.0 新添加的一个接口，负责**
+>
+> **将请求信息转换为一个对象（类型为 T）**
+>
+> **将对象（类型为 T）输出为响应信息**
+
+注意：一般Controller返回String类型是走视图解析（ViewResolver）
+
+​			如果返回其他类型是由HttpMessageConverter负责
+
+![1605356444254](SpringMVC.assets/1605356444254.png)
+
+HttpMessageConverter<T>接口定义的方法：
+
+- Boolean canRead(Class<?> clazz,MediaType mediaType): 
+  - 指定转换器可以读取的对象类型，即转换器是否可将请求信息转换为 clazz 类型的对象，同时指定支持 MIME 类型(text/html,applaiction/json等)
+- Boolean canWrite(Class<?> clazz,MediaType mediaType):
+  - 指定转换器是否可将 clazz 类型的对象写到响应流中，响应流支持的媒体类型在MediaType 中定义
+- LIst<MediaType> getSupportMediaTypes()：
+  - 该转换器支持的媒体类型
+- T read(Class<? extends T> clazz,HttpInputMessage inputMessage)：
+  - 将请求信息流转换为 T 类型的对象
+- void write(T t,MediaType contnetType,HttpOutputMessgae outputMessage):
+  - 将T类型的对象写到响应流中，同时指定相应的媒体类型为 contentType
+
+## 12. 拦截器
+
+> SpringMVC提供了拦截器机制：
+> 	允许运行目标方法之前进行一些拦截工作，或者目标方法运行之后进行一些其他处理。
+> 	
+> Filter：javaWeb
+> HandlerInterceptor：SpringMVC
+
+**HandlerInterceptor**：
+
+- preHandle：在目标方法运行之前调用：
+  - 返回boolean
+    - return true；(chain.doFilter())放行；
+    -  return false；不放行
+
+- postHandle：在目标方法运行之后调用
+- afterCompletion：资源响应之后调用
+
+### 12.1 操作步骤
+
+1. 实现HandlerInterceptor接口
+
+   ```java
+   package com.chenhui.interceptor;
+   
+   import org.springframework.web.servlet.HandlerInterceptor;
+   import org.springframework.web.servlet.ModelAndView;
+   
+   import javax.servlet.http.HttpServletRequest;
+   import javax.servlet.http.HttpServletResponse;
+   
+   public class MyFirstInterceptor implements HandlerInterceptor {
+   
+       public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+           System.out.println("MyFirstInterceptor...preHandle");
+           return true;
+       }
+   
+       public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+           System.out.println("MyFirstInterceptor...postHandle");
+       }
+   
+       public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+           System.out.println("MyFirstInterceptor...afterCompletion");
+       }
+   }
+   ```
+
+2. 配置拦截器
+
+   ```xml
+       <mvc:interceptors>
+           <!--默认拦截所有请求↓-->
+           <!-- <bean class="com.chenhui.interceptor.MyFirstInterceptor"></bean>-->
+   
+           <!--拦截具体请求↓-->
+           <mvc:interceptor>
+               <!--只拦截path所对应的请求-->
+               <mvc:mapping path="/testInter"/>
+               <bean class="com.chenhui.interceptor.MyFirstInterceptor"></bean>
+           </mvc:interceptor>
+       </mvc:interceptors>
+   ```
+
+   testInter控制器如下
+
+   ```java
+   @Controller
+   public class InterceptorTestController {
+   
+       @RequestMapping("/testInter")
+       public String testInterceptor(){
+           return "hello";
+       }
+   }
+   
+   ```
+
+   hello.jsp：
+
+   ```jsp
+   <% pageContext.setAttribute("ctp",request.getContextPath());%>
+   
+   <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
+   <html>
+     <head>
+       <title>$Title$</title>
+     </head>
+     <body>
+     <a href="testInter">测试拦截器</a>
+     </body>
+   </html>
+   <%--<jsp:forward page="/emp"></jsp:forward>--%>
+   ```
+
+   
+
+3. 拦截器的运行流程
+
+   1. preHandle
+   2. 目标方法
+   3. postHandle
+   4. 页面渲染
+   5. afterCompletion
+
+   ![1605412059743](SpringMVC.assets/1605412059743.png)
+
+   其他流程：
+
+   1. 只要preHandle不放行就没有以后的流程；
+
+      - preHandle return false
+
+      <img src="SpringMVC.assets/1605412516902.png" alt="1605412516902"  />
+
+   2. 只要放行了，afterCompletion都会执行；
+
+      - 目标方法出现异常，afterCompletion也会执行
+
+        ![1605412714078](SpringMVC.assets/1605412714078.png)
+
+### 12.2 多个拦截器
+
+
+
+![1605414721082](SpringMVC.assets/1605414721082.png)
+
+
+
+```
+MyFirstInterceptor...preHandle...
+MySecondInterceptor...preHandle...
+目标方法....
+MySecondInterceptor...postHandle...
+MyFirstInterceptor...postHandle...
+响应页面....
+MySecondInterceptor...afterCompletion...
+MyFirstInterceptor...afterCompletion
+```
+
+**异常流程：**
+
+1. 哪一块Interceptor不放行
+
+   1. 哪一块不放行从此以后都没有
+
+2. MySecondInterceptor不放行
+
+   1. 但是他前面已经放行了的拦截器的afterCompletion总会执行
+
+   ​	
+
+**总结interceptor的流程：**
+
+拦截器的preHandle：是按照顺序执行
+
+拦截器的postHandle：是按照逆序执行
+
+拦截器的afterCompletion：是按照逆序执行
+
+已经放行了的拦截器的afterCompletion总会执行
+
+### 12.3 拦截器源码
+
+在DispatcherServlet中
+
+```java
+try {
+            ModelAndView mv = null;
+            Exception dispatchException = null;
+
+            try {
+                processedRequest = checkMultipart(request);
+                multipartRequestParsed = processedRequest != request;
+
+                
+                // Determine handler for the current request.拿到方法的执行链，包含拦截器
+                mappedHandler = getHandler(processedRequest);
+                
+                
+                
+                if (mappedHandler == null || mappedHandler.getHandler() == null) {
+                    noHandlerFound(processedRequest, response);
+                    return;
+                }
+
+                
+                // Determine handler adapter for the current request.
+                HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+
+                // Process last-modified header, if supported by the handler.
+                String method = request.getMethod();
+                boolean isGet = "GET".equals(method);
+                if (isGet || "HEAD".equals(method)) {
+                    long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
+                    if (logger.isDebugEnabled()) {
+                        String requestUri = urlPathHelper.getRequestUri(request);
+                        logger.debug("Last-Modified value for [" + requestUri + "] is: " + lastModified);
+                    }
+                    if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
+                        return;
+                    }
+                }
+
+                
+                
+               //拦截器preHandle执行位置;有一个拦截器返回false目标方法以后都不会执行；直接跳到afterCompletion
+                if (!mappedHandler.applyPreHandle(processedRequest, response)) {
+                    return;
+                }
+
+                
+                
+                try {
+                    // Actually invoke the handler.适配器执行目标方法
+                    mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+                }
+                finally {
+                    if (asyncManager.isConcurrentHandlingStarted()) {
+                        return;
+                    }
+                }
+
+                applyDefaultViewName(request, mv);
+                
+                
+                
+                 //目标方法只要正常就会走到postHandle;任何期间有异常
+                mappedHandler.applyPostHandle(processedRequest, response, mv);
+                
+                
+                
+            }
+            catch (Exception ex) {
+                dispatchException = ex;
+            }
+
+    
+    
+            //页面渲染；如果完蛋也是直接跳到afterCompletion；
+            processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+    
+    
+    
+        }
+        catch (Exception ex) {
+            triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
+        }
+        catch (Error err) {
+            triggerAfterCompletionWithError(processedRequest, response, mappedHandler, err);
+        }
+        finally {
+            if (asyncManager.isConcurrentHandlingStarted()) {
+                // Instead of postHandle and afterCompletion
+                mappedHandler.applyAfterConcurrentHandlingStarted(processedRequest, response);
+                return;
+            }
+            // Clean up any resources used by a multipart request.
+            if (multipartRequestParsed) {
+                cleanupMultipart(processedRequest);
+            }
+        }
+    }
+```
+
+顺序遍历所有拦截器的preHandle方法
+
+```java
+boolean applyPreHandle(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (getInterceptors() != null) {
+            for (int i = 0; i < getInterceptors().length; i++) {
+                HandlerInterceptor interceptor = getInterceptors()[i];
+
+                //preHandle-true-false
+                if (!interceptor.preHandle(request, response, this.handler)) {
+                    //执行完afterCompletion（）;
+                    triggerAfterCompletion(request, response, null);
+                    //返回一个false
+                    return false;
+                }
+               //记录一下索引
+               //this.interceptorIndex = i;
+            }
+        }
+        return true;
+    }
+```
+
+逆序遍历所有拦截器的postHandle方法
+
+```java
+void applyPostHandle(HttpServletRequest request, HttpServletResponse response, ModelAndView mv) throws Exception {
+        if (getInterceptors() == null) {
+            return;
+        }
+        //逆向执行每个拦截器的postHandle
+        for (int i = getInterceptors().length - 1; i >= 0; i--) {
+            HandlerInterceptor interceptor = getInterceptors()[i];
+            interceptor.postHandle(request, response, this.handler, mv);
+        }
+    }
+```
+
+页面渲染方法
+
+```java
+private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+            HandlerExecutionChain mappedHandler, ModelAndView mv, Exception exception) throws Exception {
+
+        boolean errorView = false;
+
+        if (exception != null) {
+            if (exception instanceof ModelAndViewDefiningException) {
+                logger.debug("ModelAndViewDefiningException encountered", exception);
+                mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+            }
+            else {
+                Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+                mv = processHandlerException(request, response, handler, exception);
+                errorView = (mv != null);
+            }
+        }
+
+        // Did the handler return a view to render?
+        if (mv != null && !mv.wasCleared()) {
+            
+             //页面渲染
+            render(mv, request, response);
+            if (errorView) {
+                WebUtils.clearErrorRequestAttributes(request);
+            }
+        }
+        else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Null ModelAndView returned to DispatcherServlet with name '" + getServletName() +
+                        "': assuming HandlerAdapter completed request handling");
+            }
+        }
+
+        if (WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+            // Concurrent handling started during a forward
+            return;
+        }
+
+    
+        if (mappedHandler != null) {
+               //页面正常执行afterCompletion；即使没走到这，afterCompletion总会执行；
+            mappedHandler.triggerAfterCompletion(request, response, null);
+        }
+    }
+```
+
+afterCompletion：
+
+```java
+void triggerAfterCompletion(HttpServletRequest request, HttpServletResponse response, Exception ex)
+            throws Exception {
+
+        if (getInterceptors() == null) {
+            return;
+        }
+         
+          //有记录最后一个放行拦截器的索引，从他开始把之前所有放行的拦截器的afterCompletion都执行
+        for (int i = this.interceptorIndex; i >= 0; i--) {
+            HandlerInterceptor interceptor = getInterceptors()[i];
+            try {
+                interceptor.afterCompletion(request, response, this.handler, ex);
+            }
+            catch (Throwable ex2) {
+                logger.error("HandlerInterceptor.afterCompletion threw exception", ex2);
+            }
+        }
+    }
+```
+
+第二个拦截器不放行的情况：
+
+preHandle：
+
+ ![img](SpringMVC.assets/Image [46].png) 
+
+```markdown
+第一次：ConversionServiceExposingInterceptor  interceptorIndex=0；
+第二次：MyFirstInterceptor                    interceptorIndex=1
+第三次；MySecondInterceptor          执行afterCompletion()
+已经放行了的拦截器的afterCompletion总会执行
+```
+
+从记录的索引开始倒叙执行afterCompletion方法：
+
+```java
+ for (int i = this.interceptorIndex; i >= 0; i--) {
+            HandlerInterceptor interceptor = getInterceptors()[i];
+            try {
+                interceptor.afterCompletion(request, response, this.handler, ex);
+            }
+            catch (Throwable ex2) {
+                logger.error("HandlerInterceptor.afterCompletion threw exception", ex2);
+            }
+	}
+```
+
+
+
+## 13. 国际化
+
+### 13.1 步骤
+
+1. 写好国际化资源文件
+
+   ```properties
+   username=UserName
+   password=PassWord
+   login=Login
+   ```
+
+   ```properties
+   username=用户名
+   password=密码
+   login=登录
+   ```
+
+   
+
+2. 让Spring的ResourceBundleMessageSource管理国际化资源文件
+
+   ```xml
+   <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+           <property name="basename" value="loginpage/login"></property>
+       </bean>
+   ```
+
+3. 直接去页面取值
+
+   ```jsp
+   <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+   <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+   <html>
+   <head>
+       <title>Title</title>
+   </head>
+   <body>
+   <form>
+       <fmt:message key="username"/>：<input type="text"><br>
+       <fmt:message key="password"/>：<input type="password"><br>
+       <input type="submit" value="<fmt:message key="login"/>">
+   </form>
+   </body>
+   </html>
+   ```
+
+   
+
+4. 现象：是按照浏览器带来语言信息决定
+
+
+
+### 13.2 自定义LocaleResolver
+
+实现LocaleResolver接口
+
+```java
+public class MyLocalResolver implements LocaleResolver {
+    public Locale resolveLocale(HttpServletRequest request) {
+        System.out.println("自己的区域解析器");
+        Locale l = null;
+
+        String locale = request.getParameter("locale");
+        System.out.println("自己区域解析器接受的locale:"+locale);
+        if (locale != null && !"".equals(locale)) {
+            l = new Locale(locale.split("_")[0], locale.split("_")[1]);
+        } else {
+            l = request.getLocale();
+        }
+        System.out.println("Locale:"+l.toString());
+        return l;
+    }
+
+    public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {
+        throw new UnsupportedOperationException("Can't set Locale message");
+    }
+}
+
+
+```
+
+注册到ioc.xml中
+
+```xml
+<bean id="localeResolver" class="com.chenhui.component.MyLocalResolver"></bean>
+```
+
+jsp页面修改为
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+<form>
+    <fmt:message key="username"/>：<input type="text"><br>
+    <fmt:message key="password"/>：<input type="password"><br>
+    <input type="submit" value="<fmt:message key="login"/>">
+</form>
+<a href="tologinpage?locale=zh_CN">中文</a>
+<a href="tologinpage?locale=en_US">英文</a>
+</body>
+</html>
+```
+
+效果
+
+![1605429240237](SpringMVC.assets/1605429240237.png)
+
+![1605429248620](SpringMVC.assets/1605429248620.png)
+
+### 13.3 FixedLocaleResolver：
+
+使用系统默认的区域信息
+
+```java
+@Override
+    public Locale resolveLocale(HttpServletRequest request) {
+        Locale locale = getDefaultLocale();
+        if (locale == null) {
+            locale = Locale.getDefault();
+        }
+        return locale;
+    }
+
+    @Override
+    public LocaleContext resolveLocaleContext(HttpServletRequest request) {
+        return new TimeZoneAwareLocaleContext() {
+            @Override
+            public Locale getLocale() {
+                return getDefaultLocale();
+            }
+            @Override
+            public TimeZone getTimeZone() {
+                return getDefaultTimeZone();
+            }
+        };
+    }
+
+    @Override
+    public void setLocaleContext(HttpServletRequest request, HttpServletResponse response, LocaleContext localeContext) {
+        throw new UnsupportedOperationException("Cannot change fixed locale - use a different locale resolution strategy");
+    }
+```
+
+### 13.4 SessionLocaleResolver：
+
+区域信息是从session中获取，可以根据请求参数创建一个locale对象，把他放在session中。
+
+```java
+@Override
+    public Locale resolveLocale(HttpServletRequest request) {
+        Locale locale = (Locale) WebUtils.getSessionAttribute(request, LOCALE_SESSION_ATTRIBUTE_NAME);
+        if (locale == null) {
+            locale = determineDefaultLocale(request);
+        }
+        return locale;
+    }
+```
+
+### 13.5 CookieLocaleResolver
+
+区域信息是从cookie中获取
+
+```java
+@Override
+    public Locale resolveLocale(HttpServletRequest request) {
+        parseLocaleCookieIfNecessary(request);
+        return (Locale) request.getAttribute(LOCALE_REQUEST_ATTRIBUTE_NAME);
+    }
+```
+
+
+
+## 14. 异常处理
+
+### 14.1 异常源码
+
+```java
+processDispatchResult(processedRequest, response, mappedHandler, 
+    mv, dispatchException);
+```
+
+加了MVC异常处理，默认就是这个几个HandlerExceptionResolver
+
+ ![img](SpringMVC.assets/Image [52].png) 
+
+- ExceptionHandlerExceptionResolver
+- ResponseStatusExceptionResolver
+- DefaultHandlerExceptionResolver
+
+如果异常解析器都不能处理就直接抛出去；
+
+```java
+private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+            HandlerExecutionChain mappedHandler, ModelAndView mv, Exception exception) throws Exception {
+
+        boolean errorView = false;
+
+    	//如果有异常
+        if (exception != null) {
+            if (exception instanceof ModelAndViewDefiningException) {
+                logger.debug("ModelAndViewDefiningException encountered", exception);
+                mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+            }
+            else {
+                
+                //处理异常
+                Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+                
+                //===================================
+                mv = processHandlerException(request, response, handler, exception);
+                
+                
+                errorView = (mv != null);
+            }
+        }
+
+        // Did the handler return a view to render?
+        if (mv != null && !mv.wasCleared()) {
+               //来到页面
+            render(mv, request, response);
+            if (errorView) {
+                WebUtils.clearErrorRequestAttributes(request);
+            }
+        }
+        else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Null ModelAndView returned to DispatcherServlet with name '" + getServletName() +
+                        "': assuming HandlerAdapter completed request handling");
+            }
+        }
+
+        if (WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+            
+            // Concurrent handling started during a forward
+            return;
+        }
+
+        if (mappedHandler != null) {
+            mappedHandler.triggerAfterCompletion(request, response, null);
+        }
+    }
+```
+
+所有异常解析器尝试解析，解析完成进行后续，解析失败下一个解析器继续解析
+
+```java
+protected ModelAndView processHandlerException(HttpServletRequest request, HttpServletResponse response,
+            Object handler, Exception ex) throws Exception {
+
+        // Check registered HandlerExceptionResolvers...
+        ModelAndView exMv = null;
+        for (HandlerExceptionResolver handlerExceptionResolver : this.handlerExceptionResolvers) {
+            exMv = handlerExceptionResolver.resolveException(request, response, handler, ex);
+            if (exMv != null) {
+                break;
+            }
+        }
+        if (exMv != null) {
+            if (exMv.isEmpty()) {
+                return null;
+            }
+            
+            // We might still need view name translation for a plain error model...
+            if (!exMv.hasView()) {
+                exMv.setViewName(getDefaultViewName(request));
+            }
+            if (logger.isDebugEnabled()) {
+                logger.debug("Handler execution resulted in exception - forwarding to resolved error view: " + exMv, ex);
+            }
+            WebUtils.exposeErrorRequestAttributes(request, ex, getServletName());
+            return exMv;
+        }
+
+        throw ex;
+    }
+
+```
+
+### 14.2 ExceptionHandler
+
+#### 局部异常处理
+
+```java
+@Controller
+public class ExceptionTestController {
+    @RequestMapping("/testException")
+    public String exceptionTest(Integer integer){
+        System.out.println("testException");
+        System.out.println(10/integer);
+        return "exception";
+    }
+
+    @ExceptionHandler(value = {ArithmeticException.class})
+    public String handleException01(){
+        System.out.println("handleException-Arithmetic");
+        return "myError";
+    }
+}
+```
+
+Jsp页面：
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+<h1>运算出错</h1>
+</body>
+</html>
+```
+
+若要携带异常信息, 可以返回ModelAndView
+
+**注意：**
+
+- **异常信息不能给参数位置写Model**
+- **同个作用域，有多个Exception异常处理器，精确优先**
+
+```java
+@ExceptionHandler(value = {ArithmeticException.class})
+    public ModelAndView handleException01(Exception exception){
+        System.out.println("handleException-Arithmetic");
+        System.out.println("exception:"+exception);
+        ModelAndView myError = new ModelAndView("myError");
+        myError.addObject("ex",exception);
+        return myError;
+    }
+```
+
+####  全局异常处理
+
+异常处理控制器可以放在@ControllerAdvice下，作用域是全局
+
+```java
+@ControllerAdvice
+public class MyExceptionController {
+    @ExceptionHandler(value = {ArithmeticException.class})
+    public ModelAndView handleException01(Exception exception){
+        System.out.println("handleException-Arithmetic");
+        System.out.println("exception:"+exception);
+        ModelAndView myError = new ModelAndView("myError");
+        myError.addObject("ex",exception);
+        return myError;
+    }
+}
+```
+
+**全局与本类都有匹配的异常处理器，本类的优先运行**
+
+### 14.3 ResponseStatus
+
+编写一个异常类
+
+```java
+package com.chenhui.component;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(reason = "拒绝登录", value = HttpStatus.NOT_ACCEPTABLE)
+public class UsernameNotFoundException extends RuntimeException {
+    static final long serialVersionUID = 1L;
+}
+
+```
+
+测试：
+
+```java
+    @RequestMapping("/testException2")
+    public String exceptionTest2(String username){
+        System.out.println("testException");
+        if (!"admin".equals(username)){
+            System.out.println("登录失败");
+            //+++++抛出自己的错误信息
+            throw new UsernameNotFoundException();
+            
+        }
+        System.out.println("登陆成功");
+        return "success";
+    }
+```
+
+结果：
+
+![1605446703449](SpringMVC.assets/1605446703449.png)
+
+### 14.4  DefaultHandlerExceptionResolver
+
+**DefaultHandlerExceptionResolver**:
+
+判断是否是SpringMVC自带的异常或Spring自己的异常：
+
+如：HttpRequestMethodNotSupportedException。如果没人处理则它自己处理
+
+ ![img](SpringMVC.assets/Image [51].png) 
+
+默认的异常有
+
+```java
+try {
+            if (ex instanceof NoSuchRequestHandlingMethodException) {
+                return handleNoSuchRequestHandlingMethod((NoSuchRequestHandlingMethodException) ex, request, response,
+                        handler);
+            }
+            else if (ex instanceof HttpRequestMethodNotSupportedException) {
+                return handleHttpRequestMethodNotSupported((HttpRequestMethodNotSupportedException) ex, request,
+                        response, handler);
+            }
+            else if (ex instanceof HttpMediaTypeNotSupportedException) {
+                return handleHttpMediaTypeNotSupported((HttpMediaTypeNotSupportedException) ex, request, response,
+                        handler);
+            }
+            else if (ex instanceof HttpMediaTypeNotAcceptableException) {
+                return handleHttpMediaTypeNotAcceptable((HttpMediaTypeNotAcceptableException) ex, request, response,
+                        handler);
+            }
+            else if (ex instanceof MissingServletRequestParameterException) {
+                return handleMissingServletRequestParameter((MissingServletRequestParameterException) ex, request,
+                        response, handler);
+            }
+            else if (ex instanceof ServletRequestBindingException) {
+                return handleServletRequestBindingException((ServletRequestBindingException) ex, request, response,
+                        handler);
+            }
+            else if (ex instanceof ConversionNotSupportedException) {
+                return handleConversionNotSupported((ConversionNotSupportedException) ex, request, response, handler);
+            }
+            else if (ex instanceof TypeMismatchException) {
+                return handleTypeMismatch((TypeMismatchException) ex, request, response, handler);
+            }
+            else if (ex instanceof HttpMessageNotReadableException) {
+                return handleHttpMessageNotReadable((HttpMessageNotReadableException) ex, request, response, handler);
+            }
+            else if (ex instanceof HttpMessageNotWritableException) {
+                return handleHttpMessageNotWritable((HttpMessageNotWritableException) ex, request, response, handler);
+            }
+            else if (ex instanceof MethodArgumentNotValidException) {
+                return handleMethodArgumentNotValidException((MethodArgumentNotValidException) ex, request, response, handler);
+            }
+            else if (ex instanceof MissingServletRequestPartException) {
+                return handleMissingServletRequestPartException((MissingServletRequestPartException) ex, request, response, handler);
+            }
+            else if (ex instanceof BindException) {
+                return handleBindException((BindException) ex, request, response, handler);
+            }
+            else if (ex instanceof NoHandlerFoundException) {
+                return handleNoHandlerFoundException((NoHandlerFoundException) ex, request, response, handler);
+            }
+        }
+        catch (Exception handlerException) {
+            logger.warn("Handling of [" + ex.getClass().getName() + "] resulted in Exception", handlerException);
+        }
+        return null;
+    }
+```
+
+### 14.5 SimpleMappingExceptionResolver：
+
+通过配置的方式进行异常处理
+
+ ![img](SpringMVC.assets/Image [54].png) 
+
+```xml
+
+<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <!-- exceptionMappings：配置哪些异常去哪些页面 -->
+        <property name="exceptionMappings">
+            <props>
+                <!-- key：异常全类名；value：要去的页面视图名；会走视图解析 -->
+                <prop key="java.lang.NullPointerException">myerror</prop>
+            </props>
+        </property>
+        <!--指定错误信息取出时使用的key  -->
+        <property name="exceptionAttribute" value="ex"></property>
+    </bean>
+```
+
+## 15. SpringMVC总结
+
+```markdown
+SpringMVC运行流程：
+
+1、所有请求，前端控制器（DispatcherServlet）收到请求，调用doDispatch进行处理
+2、根据HandlerMapping中保存的请求映射信息找到，处理当前请求的，处理器执行链（包含拦截器）
+3、根据当前处理器找到他的HandlerAdapter（适配器）
+4、拦截器的preHandle先执行
+5、适配器执行目标方法，并返回ModelAndView
+          1）、ModelAttribute注解标注的方法提前运行
+          2）、执行目标方法的时候（确定目标方法用的参数）
+                    1）、有注解
+                    2）、没注解：
+                             1）、 看是否Model、Map以及其他的
+                              2）、如果是自定义类型
+                                             1）、从隐含模型中看有没有，如果有就从隐含模型中拿
+                                              2）、如果没有，再看是否SessionAttributes标注的属性，如果是从Session中拿，如果拿不到会抛异常
+                                             3）、都不是，就利用反射创建对象
+6、拦截器的postHandle执行
+7、处理结果；（页面渲染流程）
+             1）、如果有异常使用异常解析器处理异常；处理完后还会返回ModelAndView
+              2）、调用render进行页面渲染
+                         1）、视图解析器根据视图名得到视图对象
+                         2）、视图对象调用render方法；
+               3）、执行拦截器的afterCompletion；
+```
+
+ ![img](SpringMVC.assets/Image [55].png) 
+
+## 16. SpringMVC与Spring整合
+
+### 16.1 分容目的
+
+1. SpringMVC和Spring整合的目的：分工明确
+
+   1. SpringMVC的配置文件就来配置和网站转发逻辑以及网站功能有关的
+
+      （视图解析器，文件上传解析器，支持ajax，xxx）
+
+   2. Spring的配置文件来配置和业务有关的（事务控制，数据源，xxx）
+
+
+
+### **16.2 SpringMVC和Spring分容器**
+
+#### Spring管理业务逻辑组件
+
+```xml
+    <context:component-scan base-package="com.atguigu">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
+```
+
+#### SpringMVC管理控制器组件
+
+```xml
+    <context:component-scan base-package="com.atguigu" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
+
+```
+
+Spring是一个父容器
+
+SpringMVC是一个子容器
+
+- **子容器还可以引用父容器的组件**
+- **父容器不能引用子容器的组件**
+
+ ![img](SpringMVC.assets/Image [56].png) 
