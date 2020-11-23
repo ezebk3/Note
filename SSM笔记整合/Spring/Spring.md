@@ -13,7 +13,7 @@ Spring基础知识学习笔记(一)，内容包括：
 - 开源的免费框架，是一个容器，可以管理所有的组件(类)；
 - 轻量级的、非入侵的框架，不依赖于Spring的API
 - **控制反转(IOC)和面向切面编程(AOP)**
-- 支持事务处理，支持对框架整合
+-   支持事务处理，支持对框架整合
 - 组件化、一站式
 
 官网： [https://spring.io](https://spring.io/)
@@ -729,9 +729,13 @@ public class Air {
     }
 }
 
-<bean id="air04" class="com.xiao.Air" init-method="init" destroy-method="destroy"> </bean>
-
 ```
+
+```xml
+<bean id="air04" class="com.xiao.Air" init-method="init" destroy-method="destroy"> </bean>
+```
+
+
 
 ### 5.6 bean的后置处理器
 

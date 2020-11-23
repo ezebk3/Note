@@ -627,7 +627,7 @@ class：引用（注册）接口，
   - typeAliases 类型命名
   - typeHandlers 类型处理器
   - objectFactory 对象工厂
-  - plugins 插
+  - plugins 插件
   - environments 环境
     - environment 环境变量
       - transactionManager 事务管理器
@@ -1019,11 +1019,11 @@ public interface EmployeeMapper {
 
 - `public Employee getEmp(@Param("id")Integer id,String lastName);`
 
-  - 取值：id==>#{id/param1} lastName==>#{param2}
+  - 取值：id-->#{id/param1}  lastName-->#{param2}
 
 - `public Employee getEmp(Integer id,@Param("e")Employee emp);`
 
-  - 取值：id==>#{param1} lastName===>#{param2.lastName/e.lastName}
+  - 取值：id-->#{param1}      lastName--->#{param2.lastName/e.lastName}
 
 - **特别注意**：如果是Collection（List、Set）类型或者是数组，
 
@@ -1046,7 +1046,11 @@ public interface EmployeeMapper {
 - ParamNameResolver解析参数封装map的；
 - names：{0=id, 1=lastName}；构造器的时候就确定好了
 
-确定流程： 1.获取每个标了param注解的参数的@Param的值：id，lastName； 赋值给name; 2.每次解析一个参数给map中保存信息：（key：参数索引，value：name的值） name的值： 标注了param注解：注解的值 没有标注： 1.全局配置：useActualParamName（jdk1.8）：name=参数名 2.name=map.size()；相当于当前元素的索引 {0=id, 1=lastName,2=2}
+确定流程： 
+
+1.获取每个标了param注解的参数的@Param的值：id，lastName； 赋值给name; 
+
+2.每次解析一个参数给map中保存信息：（key：参数索引，value：name的值） name的值： 标注了param注解：注解的值 没有标注： 1.全局配置：useActualParamName（jdk1.8）：name=参数名 2.name=map.size()；相当于当前元素的索引 {0=id, 1=lastName,2=2}
 
 args【1，"Tom",'hello'】:
 
@@ -1144,7 +1148,7 @@ jdbcType通常需要在某种特定的条件下被设置：
 由于全局配置中：jdbcTypeForNull=OTHER，Oracle DB不支持，两种解决方法：
 
 1. 在mapper文件中写`#{email,jdbcType=NULL}`;
-2. 在全局配置文件``
+2. 在全局配置文件更改jdbcTypeForNull
 
 ## 26.映射文件-select-返回List
 
@@ -1924,7 +1928,7 @@ public interface EmployeeMapper {
 	 <select id="getEmpsWithDiscriminator" resultMap="MyEmpDis">
 	 	select * from employee limit 10
 	 </select>
-
+</mapper>
 ```
 
 ------
