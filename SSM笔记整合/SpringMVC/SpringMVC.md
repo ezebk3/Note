@@ -1,5 +1,7 @@
 # SpringMVC
 
+![](SpringMVC.assets/OG-Spring-1606373678666.png)
+
 ## 1.SpringMVC概述
 
 MVC：
@@ -240,9 +242,9 @@ public class HelloController {
 7. 拿到方法返回值后，视图解析器进行拼串得到完整的页面地址
 8. 得到页面地址，前端控制器帮我们转发到页面
 
-### 3.2  url映射
+### 3.2  @RequestMapping
 
-> #### RequestMapping
+> #### RequestMapping-url映射
 
 #### 01 标注在方法上
 
@@ -311,6 +313,10 @@ params属性规定请求参数。会造成错误：**HTTP Status 400 – 错误�
 #### 05 规定请求头
 
 headers属性规定请求头。其中User-Agent：浏览器信息
+
+```java
+@RequestMapping(value="/test3",headers= {"Content-Type=application/json"})
+```
 
 谷歌浏览器：User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.3
 
@@ -396,7 +402,7 @@ admin  //打印
 
 
 
-### 3.5 url-pattern
+### 3.4 url-pattern
 
 / 拦截所有的请求，不拦截jsp
 
@@ -583,13 +589,13 @@ public class User {
     private Address address;
     //....
 }
-123456
+
 public class Address {
     private String name;
     private Integer num;
         //....
 }
-12345
+
 ```
 
 前端请求：
@@ -2012,7 +2018,7 @@ javaWeb国际化步骤；
 - 不能写forward:
 
 ```java
-if (viewName.startsWith(FORWARD_URL_PREFIX)) {
+		if (viewName.startsWith(FORWARD_URL_PREFIX)) {
             String forwardUrl = viewName.substring(FORWARD_URL_PREFIX.length());
             return new InternalResourceView(forwardUrl);
         }
@@ -2039,17 +2045,17 @@ if (viewName.startsWith(FORWARD_URL_PREFIX)) {
 扩展：加深视图解析器和视图对象；
 
 - 视图解析器根据方法的返回值得到视图对象
-- 多个视图解析器都会尝试能否得到视图对象；
+- 多个视图解析器都会尝试能否得到视图对象
 - 视图对象不同就可以具有不同功能
 
 ```java
  for (ViewResolver viewResolver : this.viewResolvers) {
-          //viewResolver视图解析器根据方法的返回值，得到一个View对象；
-            View view = viewResolver.resolveViewName(viewName, locale);
-            if (view != null) {
-                return view;
-            }
-        }
+     //viewResolver视图解析器根据方法的返回值，得到一个View对象；
+     View view = viewResolver.resolveViewName(viewName, locale);
+     if (view != null) {
+         return view;
+     }
+ }
 ```
 
 - 让我们的视图解析器工作
@@ -2128,7 +2134,7 @@ public class MyViewResolver implements ViewResolver, Ordered {
 ```
 
 ```xml
-<bean class="com.chenhui.view.MyViewResolver">
+	<bean class="com.chenhui.view.MyViewResolver">
         <property name="order" value="1"></property>
     </bean>
 ```
@@ -3026,7 +3032,13 @@ public final Object resolveArgument(
 
 ### 10.2 数据格式化
 
-**自定义数据格式化**
+在SpringMVC中Controller中方法参数为Date类型想要限定请求传入时间格式时，可以通过@DateTimeFormat来指定，但请求传入参数与指定格式不符时，会返回400错误。
+
+如果在Bean属性中有Date类型字段，想再序列化转为指定格式时，也可用@DateTimeFormat来指定想要的格式。如下：
+
+ ![img](SpringMVC.assets/150046-20190308083307190-305410232.png) 
+
+**使用数据格式化**
 
 1. 在属性上加Format标签
 
@@ -3040,7 +3052,7 @@ public final Object resolveArgument(
 ```
 
 ```xml
-<bean id="myconversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+	<bean id="myconversionService" 		class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
         <property name="converters">
             <set>
                 <bean class="com.chenhui.component.MyStringToEmployeeConverter"/>
@@ -3132,7 +3144,9 @@ public final Object resolveArgument(
 
 #### 原生Form显示错误：
 
-1）、原生的表单怎么办？   将错误放在Model中就行了
+1）、原生的表单怎么办？   
+
+将错误放在Model中就行了
 
 #### 国际化定制
 
@@ -3179,7 +3193,7 @@ key有规定（精确优先）：
 
 {0}：永远都是当前属性名；
 
-@Length(min = 5, max = 10,message='xxxx')
+​		@Length(min = 5, max = 10,message='xxxx')
 
 按照字母排序
 
@@ -3253,7 +3267,7 @@ public class AjaxController {
 
 - @JsonIgnore可以忽略字段
 
-- @JsonFormat(pattern="")
+- @JsonFormat(pattern="")自定制序列化字段格式
 
 - ```java
       @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -4250,7 +4264,7 @@ public class MyExceptionController {
 
 **全局与本类都有匹配的异常处理器，本类的优先运行**
 
-### 14.3 ResponseStatus
+### 14.3 @ResponseStatus
 
 编写一个异常类
 

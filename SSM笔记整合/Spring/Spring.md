@@ -1,12 +1,6 @@
 # IOC控制反转、DI依赖注入
 
-Spring基础知识学习笔记(一)，内容包括：
-
-1. Spring入门案例
-2. IOC控制反转理解
-3. 属性注入的不同方式
-4. 注入不同类型的属性值
-5. 自动装配与注解开发
+![](Spring.assets/OG-Spring.png)
 
 ## 1. Spring概述
 

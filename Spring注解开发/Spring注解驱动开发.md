@@ -576,7 +576,7 @@ public class MainConfig {
 }
 ```
 
-#### 自定义TypeFilter指定过滤规则 
+##### 自定义TypeFilter指定过滤规则 
 
 我们可以来看看有哪几种过滤规则：
 
@@ -851,7 +851,7 @@ public class MainConfig2 {
 
 ------
 
-我们可以用`@Scope`这个注解来指定作用域的范围：这个就相当于在xml文件中配置的``标签里面指定scope=“prototype” 属性；
+我们可以用`@Scope`这个注解来指定作用域的范围：这个就相当于在xml文件中配置的`bean`标签里面指定scope=“prototype” 属性；
 
 ```java
 @Target({ElementType.TYPE, ElementType.METHOD})
@@ -1517,7 +1517,7 @@ public class MainConfig2 {
 ```java
 public class Color {
 }
-12
+
 ```
 
 当我们没有添加`@Import`注解的时候：我们打印容器里面所有的组件
@@ -1692,7 +1692,7 @@ public class MainConfig2 {
 
 ------
 
-#### @Import-使用ImportSelector
+##### @Import-使用ImportSelector
 
 ImportSelector是一个接口：**返回需要的组件的全类名的数组；**
 
@@ -1808,10 +1808,10 @@ public class MainConfig2 {
 ```java
 public class Blue {
 }
-12
+
 public class Yellow {
 }
-12
+
 ```
 
 ------
@@ -1850,7 +1850,7 @@ public class MyImportSelector implements ImportSelector {
 
 ------
 
-#### @Import-使用ImportBeanDefinitionRegistrar
+##### @Import-使用ImportBeanDefinitionRegistrar
 
 ImportBeanDefinitionRegistrar是一个接口：
 
@@ -2002,7 +2002,7 @@ public class MainConfig2 {
 
 ------
 
-#### 组件注册-使用FactoryBean注册组件
+#### 使用FactoryBean注册组件
 
 FactoryBean：
 
@@ -2864,7 +2864,7 @@ BeanPostProcessor 这个接口有很多的实现类：
 ```java
 @Component
 public class Dog implements ApplicationContextAware {
-
+                 //↑↑↑↑↑↑↑↑
     private ApplicationContext applicationContext;
 
     public Dog() {
@@ -2883,6 +2883,7 @@ public class Dog implements ApplicationContextAware {
         System.out.println("Dog...@PreDestroy...");
     }
 
+    //↓↓↓↓↓↓↓↓↓↓
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
@@ -3225,8 +3226,8 @@ public @interface PropertySource {
 
 ------
 
-```
-@PropertySources` ：内部可以指定多个`@PropertySource
+```java
+@PropertySources ：内部可以指定多个@PropertySource
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -3239,7 +3240,7 @@ public @interface PropertySources {
 
 ------
 
-类似于xml文件配置的这一步：``
+类似于xml文件配置的这一步：
 我们要用`@PropertySource`这个注解来指定外部文件的位置：`@PropertySource(value = {"classpath:/person.properties"})`
 
 ```java
@@ -3609,7 +3610,7 @@ public class BookService {
 public @interface Primary {
 
 }
-1234567
+
 @Configuration
 @ComponentScan({"com.ldc.service","com.ldc.dao","com.ldc.controller"})
 public class MainConfigOfAutowired {
@@ -3838,7 +3839,17 @@ public class BookService {
 #### 自动装配-方法、构造器位置的自动装配
 
 我们从`@Autowired`这个注解点进去看一下源码：
-我们可以发现这个注解可以标注的位置有：构造器，参数，方法，属性；都是从容器中来获取参数组件的值
+我们可以发现这个注解可以标注的位置有：
+
+- 构造器，
+- 参数，
+- 方法，
+- 属性；
+- 缺省
+  - 构造器只有有参数构造器时
+  - @Bean的参数
+
+都是从容器中来获取参数组件的值
 
 ```java
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
@@ -4025,7 +4036,7 @@ public class Boss {
 
 ------
 
-还有一种用法：
+还有一种缺省用法：
 现在有一个Color类，里面有一个Car属性：
 
 ```java
@@ -4721,7 +4732,7 @@ if (bean instanceof Aware) {
 
 ## AOP
 
-#### AOP-AOP功能测试
+### AOP-AOP功能测试
 
 AOP:【动态代理】
 能在程序运行期间动态的将某段代码片段切入到指定的方法指定位置进行运行的编程方式；
@@ -4918,7 +4929,7 @@ public class LogAspects {
 二、在切面类上的每一个通知方法标注通知注解：告诉Spring何时何地运行（写好切入点表达式）
 三、开启基于注解的AOP模式：`@EnableAspectJAutoProxy`
 
-#### AOP-源码原理
+### AOP-源码原理
 
 ##### [源码]-AOP原理-`@EnableAspectJAutoProxy`
 
@@ -4999,19 +5010,21 @@ public class LogAspects {
   			1）、遍历获取容器中所有的Bean，依次创建对象getBean(beanName);
   				getBean->doGetBean()->getSingleton()->
   			2）、创建bean
-  				【AnnotationAwareAspectJAutoProxyCreator在所有bean创建之前会有一个拦截，InstantiationAwareBeanPostProcessor，会调用postProcessBeforeInstantiation()】
+  				【AnnotationAwareAspectJAutoProxyCreator在所有bean创建之前会有一个拦截，它属于InstantiationAwareBeanPostProcessor后置处理器，会调用postProcessBeforeInstantiation()】
   				1）、先从缓存中获取当前bean，如果能获取到，说明bean是之前被创建过的，直接使用，否则再创建；
   					只要创建好的Bean都会被缓存起来
   				2）、createBean（）;创建bean；
   					AnnotationAwareAspectJAutoProxyCreator 会在任何bean创建之前先尝试返回bean的实例
   					【BeanPostProcessor是在Bean对象创建完成初始化前后调用的】
-  					【InstantiationAwareBeanPostProcessor是在创建Bean实例之前先尝试用后置处理器返回对象的】
+  					【InstantiationAwareBeanPostProcessor是在创建Bean实例之前先尝试用后置处理器返回代理对象的】
   					1）、resolveBeforeInstantiation(beanName, mbdToUse);解析BeforeInstantiation
   						希望后置处理器在此能返回一个代理对象；如果能返回代理对象就使用，如果不能就继续
   						1）、后置处理器先尝试返回对象；
   							bean = applyBeanPostProcessorsBeforeInstantiation（）：
-  								拿到所有后置处理器，如果是InstantiationAwareBeanPostProcessor;
+  								拿到所有后置处理器，如果是
+                    			InstantiationAwareBeanPostProcessor;
   								就执行postProcessBeforeInstantiation
+                                    
   							if (bean != null) {
                                bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
                            }
@@ -5039,7 +5052,7 @@ public class LogAspects {
   			1、找到候选的所有的增强器（找哪些通知方法是需要切入当前bean方法的）
   			2、获取到能在bean使用的增强器。
   			3、给增强器排序
-  		2）、保存当前bean在advisedBeans中；
+  		2）、保存当前bean在advisedBeans中；（advisedBean已增强的对象）
   		3）、如果当前bean需要增强，创建当前bean的代理对象；
   			1）、获取所有增强器（通知方法）
   			2）、保存到proxyFactory
@@ -5447,7 +5460,8 @@ AnnotationAwareAspectJAutoProxyCreator类里面：
   						希望后置处理器在此能返回一个代理对象；如果能返回代理对象就使用，如果不能就继续
   						1）、后置处理器先尝试返回对象；
   							bean = applyBeanPostProcessorsBeforeInstantiation（）：
-  								拿到所有后置处理器，如果是InstantiationAwareBeanPostProcessor;
+  								拿到所有后置处理器，如果是
+                    			InstantiationAwareBeanPostProcessor;
   								就执行postProcessBeforeInstantiation
   							if (bean != null) {
                                bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
@@ -5882,8 +5896,10 @@ public class TxConfig {
   						执行拦截器链；
   						事务拦截器：
   							1）、先获取事务相关的属性
-  							2）、再获取PlatformTransactionManager，如果事先没有添加指定任何transactionmanger
+  							2）、再获取PlatformTransactionManager，
+            					如果事先没有添加指定任何transactionmanger
   								最终会从容器中按照类型获取一个PlatformTransactionManager；
+            
   							3）、执行目标方法
   								如果异常，获取到事务管理器，利用事务管理回滚操作；
   								如果正常，利用事务管理器，提交事务
@@ -5896,7 +5912,7 @@ public class TxConfig {
 
 
 
-## 原理
+## Spring原理
 
 ### 扩展原理
 
@@ -6175,6 +6191,12 @@ public class UserService {
 
 ```
 
+```markdown
+EventListener是通过EventListenerMethodProcessor来解析的，它本质上是个SmartInitializingSingleton。SmartInitializingSingleton 的 afterSingletonsInstantiated()会在所有单实例bean创建完成之后触发。
+```
+
+![1606291392021](Spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8%E5%BC%80%E5%8F%91.assets/1606291392021.png)
+
 运行结果：
 
 > MyBeanDefinitionRegistryPostProcessor…bean的数量12
@@ -6218,12 +6240,14 @@ Spring容器的refresh()【创建刷新】;
 	1）、initPropertySources()初始化一些属性设置;子类自定义个性化的属性设置方法；
 	2）、getEnvironment().validateRequiredProperties();检验属性的合法等
 	3）、earlyApplicationEvents= new LinkedHashSet<ApplicationEvent>();保存容器中的一些早期的事件；
+        
 2、obtainFreshBeanFactory();获取BeanFactory；
 	1）、refreshBeanFactory();刷新【创建】BeanFactory；
 			创建了一个this.beanFactory = new DefaultListableBeanFactory();
 			设置id；
 	2）、getBeanFactory();返回刚才GenericApplicationContext创建的BeanFactory对象；
 	3）、将创建的BeanFactory【DefaultListableBeanFactory】返回；
+                
 3、prepareBeanFactory(beanFactory);BeanFactory的预准备工作（BeanFactory进行一些设置）；
 	1）、设置BeanFactory的类加载器、支持表达式解析器...
 	2）、添加部分BeanPostProcessor【ApplicationContextAwareProcessor】
@@ -6236,6 +6260,7 @@ Spring容器的refresh()【创建刷新】;
 		environment【ConfigurableEnvironment】、
 		systemProperties【Map<String, Object>】、
 		systemEnvironment【Map<String, Object>】
+                
 4、postProcessBeanFactory(beanFactory);BeanFactory准备工作完成后进行的后置处理工作；
 	1）、子类通过重写这个方法来在BeanFactory创建并预准备完成以后做进一步的设置
 ======================以上是BeanFactory的创建及预准备工作==================================
@@ -6285,7 +6310,7 @@ Spring容器的refresh()【创建刷新】;
 		SmartInstantiationAwareBeanPostProcessor、
 		MergedBeanDefinitionPostProcessor【internalPostProcessors】、
 		
-		1）、获取所有的 BeanPostProcessor;后置处理器都默认可以通过PriorityOrdered、Ordered接口来执行优先级
+		1）、获取所有的 BeanPostProcessor;后置处理器都默认可以通过PriorityOrdered、Ordered接口来指定优先级
 		2）、先注册PriorityOrdered优先级接口的BeanPostProcessor；
 			把每一个BeanPostProcessor；添加到BeanFactory中
 			beanFactory.addBeanPostProcessor(postProcessor);
@@ -6342,7 +6367,7 @@ Spring容器的refresh()【创建刷新】;
 	1、beanFactory.preInstantiateSingletons();初始化后剩下的单实例bean
 		1）、获取容器中的所有Bean，依次进行初始化和创建对象
 		2）、获取Bean的定义信息；RootBeanDefinition
-		3）、Bean不是抽象的，是单实例的，是懒加载；
+		3）、Bean不是抽象的，是单实例的，不是懒加载；
 			1）、判断是否是FactoryBean；是否是实现FactoryBean接口的Bean；
 			2）、不是工厂Bean。利用getBean(beanName);创建对象
 				0、getBean(beanName)； ioc.getBean();
@@ -6408,7 +6433,7 @@ Spring容器的refresh()【创建刷新】;
 		2）、	getLifecycleProcessor().onRefresh();
 			拿到前面定义的生命周期处理器（BeanFactory）；回调onRefresh()；
 		3）、publishEvent(new ContextRefreshedEvent(this));发布容器刷新完成事件；
-		4）、liveBeansView.registerApplicationContext(this);
+		4）、LiveBeansView.registerApplicationContext(this);
 
 ```
 
@@ -6444,7 +6469,7 @@ Spring容器的refresh()【创建刷新】;
 
 ### servlet3.0-简介&测试
 
-现在，我们来说说注解版的web，我们以前来写web的三大组件：Servlet、Filter、Listener，包括SpringMVC的前端控制器DispatcherServlet都需要在web.xml文件中来进行注册；而在Servlet3.0标准以后，就给我们提供了方便的注解的方式来完成我们这些组件的注册以及添加，提供了运行时的可插拔的插件能力；、
+现在，我们来说说注解版的web，我们以前来写web的三大组件：Servlet、Filter、Listener，包括SpringMVC的前端控制器DispatcherServlet都需要在web.xml文件中来进行注册；而在Servlet3.0标准以后，就给我们提供了方便的注解的方式来完成我们这些组件的注册以及添加，提供了运行时的可插拔的插件能力；
 
 说明：Servlet3.0及以上的标准是需要Tomcat7及以上的支持；
 
@@ -6733,7 +6758,7 @@ public class MyServletContainerInitializer implements ServletContainerInitialize
 
 1. 导入jar包：
 
-```java
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
